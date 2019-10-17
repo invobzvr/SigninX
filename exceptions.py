@@ -1,0 +1,2 @@
+class NotLogin(BaseException):
+    pass
