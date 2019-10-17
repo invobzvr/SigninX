@@ -2,3 +2,4 @@
 *.pyc
 
 costum.py
+*.db

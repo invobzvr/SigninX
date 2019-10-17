@@ -1,5 +1,7 @@
 from requests import get, post
 from exceptions import *
+from json import dumps
+from json.decoder import JSONDecodeError
 
 
 API = {
@@ -9,8 +11,10 @@ API = {
 
 
 class BaseSignin:
-    def __init__(self, args, maxRetry=10):
+    def __init__(self, name, args, conn, maxRetry=10):
+        self.name = name
         self.args = args
+        self.conn = conn
         self.maxRetry = maxRetry
 
     def req(self, args):
@@ -18,25 +22,29 @@ class BaseSignin:
             args['url'],
             params=args.get('params'),
             headers=args.get('headers'),
+            cookies=args.get('cookies'),
             data=args.get('data')
         )
         return eval(args.get('result', 'None')) or res
 
     def login(self):
         res = self.req(self.args['login'])
-        self.args['headers'] = res.headers
+        self.args['cookies'] = dict(res.cookies)
+        if self.args.get('headers'):
+            del self.args['headers']
         self.save()
 
-    def sginin(self):
+    def signin(self):
         for i in range(self.maxRetry):
             try:
-                rzt = req(self.args)
+                rzt = self.req(self.args)
                 if rzt:
                     return rzt
                 else:
                     raise NotLogin
-            except NotLogin:
+            except (NotLogin, JSONDecodeError):
                 self.login()
 
     def save(self):
-        pass
+        self.conn.cursor().execute("UPDATE sites SET data='%s' WHERE name='%s'" % (dumps(self.args), self.name))
+        self.conn.commit()
