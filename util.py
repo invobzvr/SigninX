@@ -11,7 +11,7 @@ API = {
 
 
 class BaseSignin:
-    def __init__(self, name, args, conn, maxRetry=10):
+    def __init__(self, name, args, conn=None, maxRetry=10):
         self.name = name
         self.args = args
         self.conn = conn
@@ -39,6 +39,7 @@ class BaseSignin:
             try:
                 rzt = self.req(self.args)
                 if rzt:
+                    self.result = rzt
                     return rzt
                 else:
                     raise NotLogin
@@ -46,5 +47,6 @@ class BaseSignin:
                 self.login()
 
     def save(self):
-        self.conn.cursor().execute("UPDATE sites SET data='%s' WHERE name='%s'" % (dumps(self.args), self.name))
-        self.conn.commit()
+        if self.conn:
+            self.conn.cursor().execute("UPDATE sites SET data='%s' WHERE name='%s'" % (dumps(self.args), self.name))
+            self.conn.commit()
