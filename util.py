@@ -48,5 +48,5 @@ class BaseSignin:
 
     def save(self):
         if self.conn:
-            self.conn.cursor().execute("UPDATE sites SET data='%s' WHERE name='%s'" % (dumps(self.args), self.name))
+            self.conn.cursor().execute("UPDATE sites SET data=? WHERE name=?", (dumps(self.args), self.name))
             self.conn.commit()

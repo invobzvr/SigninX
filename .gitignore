@@ -1,5 +1,7 @@
-﻿__pycache__/
+﻿*demo*
+
+__pycache__/
 *.pyc
 
-costum.py
+custom.py
 *.db

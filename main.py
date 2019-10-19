@@ -1,24 +1,32 @@
 from util import BaseSignin
-import costum
 from sqlite3 import connect
 from json import loads, dumps
 from threading import Thread
-from time import time, sleep
+from time import time, sleep, strptime, strftime, mktime
+
+
+def dayRange():
+    st = strptime(strftime('%Y-%m-%d'), '%Y-%m-%d')
+    ts = int(mktime(st)) + 28800
+    return ts, ts + 86399
 
 
 class SigninX:
-    def __init__(self):
-        self.schedule = {}
-        self.conn = connect('data.db')
+    def __init__(self, database='data.db', custom=None):
+        if custom:
+            self.custom = __import__(custom)
+        self.conn = connect(database, check_same_thread=False)
         self.cur = self.conn.cursor()
         self.cur.execute('CREATE TABLE IF NOT EXISTS sites(name TEXT PRIMARY KEY,data TEXT)')
-        self.cur.execute('CREATE TABLE IF NOT EXISTS results(ts INTEGER PRIMARY KEY,name TEXT,result TEXT)')
+        self.cur.execute('CREATE TABLE IF NOT EXISTS results(ts INTEGER,name TEXT,result TEXT)')
         self.cur.execute('SELECT * FROM sites')
         self.tasks = {name: loads(raw) for name, raw in self.cur}
+        self.cur.execute('SELECT name,result FROM results WHERE ts>=%s AND ts<=%s' % dayRange())
+        self.schedule = {name: result for name, result in self.cur}
 
     def add(self, name, args):
         self.tasks[name] = args
-        self.cur.execute('INSERT INTO sites VALUES(%s,%s)' % (name, dumps(args)))
+        self.cur.execute('INSERT INTO sites VALUES(?,?)', (name, dumps(args)))
         self.conn.commit()
 
     def start(self):
@@ -44,7 +52,7 @@ class SigninX:
         self.conn.close()
 
     def task(self, name):
-        rzt = (eval('costum.SX_%s' % name) if 'SX_%s' % name in dir(costum) else BaseSignin)(name, self.tasks[name], self.conn).signin()
-        self.cur.execute('INSERT INTO results VALUES(%s,%s,%s)' % (int(time()), name, rzt))
+        rzt = (eval('self.custom.SX_%s' % name) if 'SX_%s' % name in dir(self.custom) else BaseSignin)(name, self.tasks[name], self.conn).signin()
+        self.cur.execute("INSERT INTO results VALUES(?,?,?)", (int(time()), name, rzt))
         self.conn.commit()
         self.schedule[name] = rzt
