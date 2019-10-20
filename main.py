@@ -16,24 +16,35 @@ class SigninX:
         if custom:
             self.custom = __import__(custom)
         self.conn = connect(database, check_same_thread=False)
-        self.cur = self.conn.cursor()
-        self.cur.execute('CREATE TABLE IF NOT EXISTS sites(name TEXT PRIMARY KEY,data TEXT)')
-        self.cur.execute('CREATE TABLE IF NOT EXISTS results(ts INTEGER,name TEXT,result TEXT)')
-        self.cur.execute('SELECT * FROM sites')
-        self.tasks = {name: loads(raw) for name, raw in self.cur}
-        self.cur.execute('SELECT name,result FROM results WHERE ts>=%s AND ts<=%s' % dayRange())
-        self.schedule = {name: result for name, result in self.cur}
+        self.conn.execute('CREATE TABLE IF NOT EXISTS sites(name TEXT PRIMARY KEY,data TEXT)')
+        self.conn.execute('CREATE TABLE IF NOT EXISTS results(ts INTEGER,name TEXT,result TEXT)')
+        self.tasks = {name: loads(raw) for name, raw in self.conn.execute('SELECT * FROM sites')}
+        self.schedule = {name: result for name, result in self.conn.execute('SELECT name,result FROM results WHERE ts>=? AND ts<=?', dayRange())}
 
     def add(self, name, args):
         self.tasks[name] = args
-        self.cur.execute('INSERT INTO sites VALUES(?,?)', (name, dumps(args)))
+        self.conn.execute('INSERT INTO sites VALUES(?,?)', (name, dumps(args)))
         self.conn.commit()
+        return True
+
+    def update(self, name, args):
+        self.tasks[name] = args
+        self.conn.execute('UPDATE sites SET data=? WHERE name=?', (dumps(args), name))
+        self.conn.commit()
+        return True
+
+    def remove(self, name):
+        if self.tasks.get(name):
+            self.conn.execute('DELETE FROM sites WHERE name=?', name)
+            self.conn.commit()
+            del self.tasks[name]
+            return True
 
     def start(self):
         ts = []
         for name in self.tasks:
             if not self.schedule.get(name):
-                t = Thread(target=self.task, args=(name,))
+                t = Thread(target=self.run, args=(name,))
                 t.start()
                 ts.append(t)
         for t in ts:
@@ -43,16 +54,16 @@ class SigninX:
     def check(self):
         if all(self.schedule.values()):
             self.close()
+            return True
         else:
             sleep(30 * 60)
             self.start()
 
     def close(self):
-        self.cur.close()
         self.conn.close()
 
-    def task(self, name):
+    def run(self, name):
         rzt = (eval('self.custom.SX_%s' % name) if 'SX_%s' % name in dir(self.custom) else BaseSignin)(name, self.tasks[name], self.conn).signin()
-        self.cur.execute("INSERT INTO results VALUES(?,?,?)", (int(time()), name, rzt))
+        self.conn.execute('INSERT INTO results VALUES(?,?,?)', (int(time()), name, rzt))
         self.conn.commit()
         self.schedule[name] = rzt
