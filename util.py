@@ -29,7 +29,7 @@ class BaseSignin:
 
     def login(self):
         res = self.req(self.args['login'])
-        self.args['cookies'] = dict(res.cookies)
+        self.args['cookies'] = {cki.name: cki.value for cki in res.cookies}
         if self.args.get('headers'):
             del self.args['headers']
         self.save()
