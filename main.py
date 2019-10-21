@@ -7,7 +7,7 @@ from time import time, sleep, strptime, strftime, mktime
 
 def dayRange():
     st = strptime(strftime('%Y-%m-%d'), '%Y-%m-%d')
-    ts = int(mktime(st)) + 28800
+    ts = int(mktime(st))
     return ts, ts + 86399
 
 
@@ -22,16 +22,18 @@ class SigninX:
         self.schedule = {name: result for name, result in self.conn.execute('SELECT name,result FROM results WHERE ts>=? AND ts<=?', dayRange())}
 
     def add(self, name, args):
-        self.tasks[name] = args
-        self.conn.execute('INSERT INTO sites VALUES(?,?)', (name, dumps(args)))
-        self.conn.commit()
-        return True
+        if not self.tasks.get(name):
+            self.tasks[name] = args
+            self.conn.execute('INSERT INTO sites VALUES(?,?)', (name, dumps(args)))
+            self.conn.commit()
+            return True
 
     def update(self, name, args):
-        self.tasks[name] = args
-        self.conn.execute('UPDATE sites SET data=? WHERE name=?', (dumps(args), name))
-        self.conn.commit()
-        return True
+        if self.tasks.get(name):
+            self.tasks[name] = args
+            self.conn.execute('UPDATE sites SET data=? WHERE name=?', (dumps(args), name))
+            self.conn.commit()
+            return True
 
     def remove(self, name):
         if self.tasks.get(name):
@@ -64,6 +66,8 @@ class SigninX:
 
     def run(self, name):
         rzt = (eval('self.custom.SX_%s' % name) if 'SX_%s' % name in dir(self.custom) else BaseSignin)(name, self.tasks[name], self.conn).signin()
+        if isinstance(rzt, dict):
+            rzt = dumps(rzt, ensure_ascii=0)
         self.conn.execute('INSERT INTO results VALUES(?,?,?)', (int(time()), name, rzt))
         self.conn.commit()
         self.schedule[name] = rzt

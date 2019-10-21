@@ -1,13 +1,7 @@
-from requests import get, post
+from requests import request
 from exceptions import *
 from json import dumps
 from json.decoder import JSONDecodeError
-
-
-API = {
-    'get': get,
-    'post': post
-}
 
 
 class BaseSignin:
@@ -18,20 +12,20 @@ class BaseSignin:
         self.maxRetry = maxRetry
 
     def req(self, args):
-        res = API[args['method']](
+        res = request(
+            args['method'],
             args['url'],
             params=args.get('params'),
             headers=args.get('headers'),
             cookies=args.get('cookies'),
-            data=args.get('data')
+            data=args.get('data'),
+            allow_redirects=args.get('allow_redirects', True)
         )
         return eval(args.get('result', 'None')) or res
 
     def login(self):
         res = self.req(self.args['login'])
         self.args['cookies'] = {cki.name: cki.value for cki in res.cookies}
-        if self.args.get('headers'):
-            del self.args['headers']
         self.save()
 
     def signin(self):
@@ -39,12 +33,15 @@ class BaseSignin:
             try:
                 rzt = self.req(self.args)
                 if rzt:
-                    self.result = rzt
+                    self.verify(rzt)
                     return rzt
                 else:
                     raise NotLogin
             except (NotLogin, JSONDecodeError):
                 self.login()
+
+    def verify(self, rzt):
+        pass
 
     def save(self):
         if self.conn:
