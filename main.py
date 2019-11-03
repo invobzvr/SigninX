@@ -13,8 +13,7 @@ def dayRange():
 
 class SigninX:
     def __init__(self, database='data.db', custom=None):
-        if custom:
-            self.custom = __import__(custom)
+        self.custom = custom and __import__(custom)
         self.conn = connect(database, check_same_thread=False)
         self.conn.execute('CREATE TABLE IF NOT EXISTS sites(name TEXT PRIMARY KEY,data TEXT)')
         self.conn.execute('CREATE TABLE IF NOT EXISTS results(ts INTEGER,name TEXT,result TEXT)')
@@ -66,8 +65,9 @@ class SigninX:
 
     def run(self, name):
         rzt = (eval('self.custom.SX_%s' % name) if 'SX_%s' % name in dir(self.custom) else BaseSignin)(name, self.tasks[name], self.conn).signin()
-        if isinstance(rzt, dict):
-            rzt = dumps(rzt, ensure_ascii=0)
-        self.conn.execute('INSERT INTO results VALUES(?,?,?)', (int(time()), name, rzt))
-        self.conn.commit()
-        self.schedule[name] = rzt
+        if rzt:
+            if isinstance(rzt, dict):
+                rzt = dumps(rzt, ensure_ascii=0)
+            self.conn.execute('INSERT INTO results VALUES(?,?,?)', (int(time()), name, rzt))
+            self.conn.commit()
+            self.schedule[name] = rzt

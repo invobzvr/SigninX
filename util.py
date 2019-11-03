@@ -23,9 +23,12 @@ class BaseSignin:
         )
         return eval(args.get('result', 'None')) or res
 
+    def setCookies(self, res):
+        self.args['cookies'] = {cki.name: cki.value for cki in res.cookies}
+
     def login(self):
         res = self.req(self.args['login'])
-        self.args['cookies'] = {cki.name: cki.value for cki in res.cookies}
+        self.setCookies(res)
         self.save()
 
     def signin(self):
@@ -39,6 +42,8 @@ class BaseSignin:
                     raise NotLogin
             except (NotLogin, JSONDecodeError):
                 self.login()
+            except NotTimeYet:
+                break
 
     def verify(self, rzt):
         pass

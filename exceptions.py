@@ -1,2 +1,6 @@
-class NotLogin(BaseException):
+class NotLogin(Exception):
+    pass
+
+
+class NotTimeYet(Exception):
     pass
