@@ -1,13 +1,14 @@
-from util import BaseSignin
 from sqlite3 import connect
 from json import loads, dumps
 from threading import Thread
-from time import time, sleep, strptime, strftime, mktime
+from time import time, sleep, mktime
+from datetime import date
+
+from util import BaseSignin
 
 
-def dayRange():
-    st = strptime(strftime('%Y-%m-%d'), '%Y-%m-%d')
-    ts = int(mktime(st))
+def dayRange(day=None):
+    ts = int(mktime((day or date.today()).timetuple()))
     return ts, ts + 86399
 
 
@@ -53,7 +54,7 @@ class SigninX:
         self.check()
 
     def check(self):
-        if all(self.schedule.values()):
+        if len(self.schedule) == len(self.tasks):
             self.close()
             return True
         else:

@@ -1,7 +1,8 @@
 from requests import request
-from exceptions import *
 from json import dumps
 from json.decoder import JSONDecodeError
+
+from exceptions import *
 
 
 class BaseSignin:
