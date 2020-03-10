@@ -1,14 +1,8 @@
 import tkinter as tk
 import tkinter.ttk as ttk
-from time import localtime, strftime
-from json import loads, dumps
-
-from main import date, dayRange, SigninX
 from datetime import timedelta
 
-
-def fmtTS(ts):
-    return strftime('%Y-%m-%d %H:%M:%S', localtime(ts))[2:]
+from main import *
 
 
 class SX_TkGUI(tk.Tk):
@@ -80,31 +74,27 @@ self.{X}_tv = {X}_tv
     def load(self):
         for i in self.sx.conn.execute('SELECT * FROM sites'):
             self.s_tv.insert('', 'end', values=i)
-        for i, *j in self.sx.conn.execute('SELECT * FROM results WHERE ts>=? AND ts<=?', dayRange()):
-            self.r_tv.insert('', 'end', values=(fmtTS(i), *j))
+        for i in self.sx.conn.execute(f'SELECT * FROM results WHERE "time" LIKE "%{self.day}%"'):
+            self.r_tv.insert('', 'end', values=i)
 
     def empty(self, s=True):
         s and self.s_tv.delete(*self.s_tv.get_children())
         self.r_tv.delete(*self.r_tv.get_children())
 
     def start(self):
-        pass
+        self.sx.start()
 
     def refresh(self):
         self.empty()
         self.load()
 
     def dayBefore(self):
-        self.empty(0)
         self.day -= timedelta(1)
-        for i, *j in self.sx.conn.execute('SELECT * FROM results WHERE ts>=? AND ts<=?', dayRange(self.day)):
-            self.r_tv.insert('', 'end', values=(fmtTS(i), *j))
+        self.refresh()
 
     def dayAfter(self):
-        self.empty(0)
         self.day += timedelta(1)
-        for i, *j in self.sx.conn.execute('SELECT * FROM results WHERE ts>=? AND ts<=?', dayRange(self.day)):
-            self.r_tv.insert('', 'end', values=(fmtTS(i), *j))
+        self.refresh()
 
 
 if __name__ == '__main__':

@@ -1,25 +1,20 @@
 from sqlite3 import connect
 from json import loads, dumps
 from threading import Thread
-from time import time, sleep, mktime
-from datetime import date
+from time import sleep
+from datetime import date, datetime
 
-from util import BaseSignin
-
-
-def dayRange(day=None):
-    ts = int(mktime((day or date.today()).timetuple()))
-    return ts, ts + 86399
+from base import *
 
 
 class SigninX:
     def __init__(self, database='data.db', custom=None):
-        self.custom = custom and __import__(custom)
+        self.custom = parseModule(custom) if custom else {}
         self.conn = connect(database, check_same_thread=False)
         self.conn.execute('CREATE TABLE IF NOT EXISTS sites(name TEXT PRIMARY KEY,data TEXT)')
-        self.conn.execute('CREATE TABLE IF NOT EXISTS results(ts INTEGER,name TEXT,result TEXT)')
+        self.conn.execute('CREATE TABLE IF NOT EXISTS results(time TEXT,name TEXT,result TEXT)')
         self.tasks = {name: loads(raw) for name, raw in self.conn.execute('SELECT * FROM sites')}
-        self.schedule = {name: result for name, result in self.conn.execute('SELECT name,result FROM results WHERE ts>=? AND ts<=?', dayRange())}
+        self.schedule = {name: result for name, result in self.conn.execute(f'SELECT name,result FROM results WHERE "time" LIKE "%{date.today()}%"')}
 
     def add(self, name, args):
         if not self.tasks.get(name):
@@ -37,7 +32,7 @@ class SigninX:
 
     def remove(self, name):
         if self.tasks.get(name):
-            self.conn.execute('DELETE FROM sites WHERE name=?', name)
+            self.conn.execute('DELETE FROM sites WHERE name=?', (name,))
             self.conn.commit()
             del self.tasks[name]
             return True
@@ -65,10 +60,10 @@ class SigninX:
         self.conn.close()
 
     def run(self, name):
-        rzt = (eval('self.custom.SX_%s' % name) if 'SX_%s' % name in dir(self.custom) else BaseSignin)(name, self.tasks[name], self.conn).signin()
+        rzt = self.custom.get(f'SX_{name}', BaseSignin)(name, self.tasks[name], self).signin()
         if rzt:
             if isinstance(rzt, dict):
                 rzt = dumps(rzt, ensure_ascii=0)
-            self.conn.execute('INSERT INTO results VALUES(?,?,?)', (int(time()), name, rzt))
+            self.conn.execute('INSERT INTO results VALUES(?,?,?)', (datetime.now(), name, rzt))
             self.conn.commit()
             self.schedule[name] = rzt
