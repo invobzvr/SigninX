@@ -32,9 +32,13 @@ class BaseSignin:
         self.setCookies(res)
         self.save()
 
+    def beforeSI(self):
+        pass
+
     def signin(self):
         for i in range(self.maxRetry):
             try:
+                self.beforeSI()
                 rzt = self.req(self.args)
                 if rzt:
                     self.verify(rzt)
@@ -50,4 +54,4 @@ class BaseSignin:
         pass
 
     def save(self):
-        self.sx and self.sx.update(self.name, dumps(self.args))
+        self.sx and self.sx.update(self.name, self.args)

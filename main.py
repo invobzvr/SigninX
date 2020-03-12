@@ -11,15 +11,15 @@ class SigninX:
     def __init__(self, database='data.db', custom=None):
         self.custom = parseModule(custom) if custom else {}
         self.conn = connect(database, check_same_thread=False)
-        self.conn.execute('CREATE TABLE IF NOT EXISTS sites(name TEXT PRIMARY KEY,data TEXT)')
+        self.conn.execute('CREATE TABLE IF NOT EXISTS sites(name TEXT PRIMARY KEY,data TEXT,skip INT)')
         self.conn.execute('CREATE TABLE IF NOT EXISTS results(time TEXT,name TEXT,result TEXT)')
-        self.tasks = {name: loads(raw) for name, raw in self.conn.execute('SELECT * FROM sites')}
+        self.tasks = {name: loads(raw) for name, raw in self.conn.execute('SELECT name,data FROM sites WHERE skip ISNULL')}
         self.schedule = {name: result for name, result in self.conn.execute(f'SELECT name,result FROM results WHERE "time" LIKE "%{date.today()}%"')}
 
     def add(self, name, args):
         if not self.tasks.get(name):
             self.tasks[name] = args
-            self.conn.execute('INSERT INTO sites VALUES(?,?)', (name, dumps(args)))
+            self.conn.execute('INSERT INTO sites (name,data) VALUES(?,?)', (name, dumps(args)))
             self.conn.commit()
             return True
 
@@ -33,6 +33,13 @@ class SigninX:
     def remove(self, name):
         if self.tasks.get(name):
             self.conn.execute('DELETE FROM sites WHERE name=?', (name,))
+            self.conn.commit()
+            del self.tasks[name]
+            return True
+
+    def setSkip(self, name, skip=True):
+        if self.tasks.get(name):
+            self.conn.execute('UPDATE sites SET skip=? WHERE name=?', (1 if skip else None, name))
             self.conn.commit()
             del self.tasks[name]
             return True

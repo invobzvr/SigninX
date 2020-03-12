@@ -3,5 +3,5 @@
 __pycache__/
 *.pyc
 
-custom.py
+*custom*
 *.db

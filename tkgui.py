@@ -19,7 +19,7 @@ class SX_TkGUI(tk.Tk):
         nb.pack(expand=True, fill='both', side='left', padx=5, pady=5)
 
         tplt = {
-            'sites': {'Name': [120, 'center'], 'data': [420, 'w']},
+            'sites': {'Name': [120, 'center'], 'data': [360, 'w'], 'skip': [60, 'center']},
             'results': {'Date': [120, 'center'], 'Name': [120, 'center'], 'Result': [300, 'w']}
         }
         for name in tplt:
@@ -60,7 +60,7 @@ self.{X}_tv = {X}_tv
 
     def updateView(self, evt):
         tv = evt.widget
-        val = tv.item(tv.selection()[-1])['values'][-1]
+        val = tv.item(tv.selection()[-1])['values'][1 if tv == self.s_tv else 2]
         if val.startswith('{'):
             val = dumps(loads(val), indent=4, ensure_ascii=False)
         self.v_txt.delete(1.0, 'end')
@@ -82,7 +82,7 @@ self.{X}_tv = {X}_tv
         self.r_tv.delete(*self.r_tv.get_children())
 
     def start(self):
-        self.sx.start()
+        Thread(target=self.sx.start).start()
 
     def refresh(self):
         self.empty()
