@@ -5,6 +5,7 @@ from time import sleep
 from datetime import date, datetime
 
 from base import *
+from util import *
 
 
 class SigninX:

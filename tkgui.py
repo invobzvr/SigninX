@@ -32,7 +32,7 @@ nb.add({X}_frm, text=name.title(), padding=5)
 {X}_tv.pack(expand=True, fill='both', side='left')
 {X}_tv.bind('<<TreeviewSelect>>', self.updateView)
 for col in cols:
-    {X}_tv.heading(col, text=col, command=lambda: print(0))
+    {X}_tv.heading(col, text=col, command=lambda self=self, tv={X}_tv, col=col: self.sortColumn(tv, col, False))
     {X}_tv.column(col, width=cols[col][0], minwidth=cols[col][0], anchor=cols[col][1])
 self.setScrollbar({X}_frm, {X}_tv)
 self.{X}_tv = {X}_tv
@@ -65,6 +65,13 @@ self.{X}_tv = {X}_tv
             val = dumps(loads(val), indent=4, ensure_ascii=False)
         self.v_txt.delete(1.0, 'end')
         self.v_txt.insert(1.0, val)
+
+    def sortColumn(self, tv, col, asc):
+        items = [(tv.set(var, col), var) for var in tv.get_children()]
+        items.sort(reverse=asc)
+        for idx, (val, var) in enumerate(items):
+            tv.move(var, '', idx)
+        tv.heading(col, command=lambda: self.sortColumn(tv, col, not asc))
 
     def setScrollbar(self, par, tar):
         sby = ttk.Scrollbar(par, orient='vertical', command=tar.yview)
