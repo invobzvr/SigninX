@@ -39,11 +39,9 @@ class SigninX:
             return True
 
     def setSkip(self, name, skip=True):
-        if self.tasks.get(name):
-            self.conn.execute('UPDATE sites SET skip=? WHERE name=?', (1 if skip else None, name))
-            self.conn.commit()
-            del self.tasks[name]
-            return True
+        self.conn.execute('UPDATE sites SET skip=? WHERE name=?', (1 if skip else None, name))
+        self.conn.commit()
+        return True
 
     def start(self):
         ts = []

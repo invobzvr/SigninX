@@ -51,6 +51,7 @@ self.{X}_tv = {X}_tv
         sx_lf.pack(side='left', padx=5, pady=5)
         ttk.Button(sx_lf, text='Start', command=self.start).pack(side='left', padx=5, pady=5)
         ttk.Button(sx_lf, text='Refresh', command=self.refresh).pack(side='left', padx=5, pady=5)
+        ttk.Button(sx_lf, text='Skip', command=self.setSkip).pack(side='left', padx=5, pady=5)
         ttk.Button(sx_lf, text='Before', command=self.dayBefore).pack(side='left', padx=5, pady=5)
         ttk.Button(sx_lf, text='After', command=self.dayAfter).pack(side='left', padx=5, pady=5)
 
@@ -94,6 +95,14 @@ self.{X}_tv = {X}_tv
     def refresh(self):
         self.empty()
         self.load()
+
+    def setSkip(self):
+        var = self.s_tv.selection()[-1]
+        values = self.s_tv.item(var)['values']
+        skip = values[-1] != 1
+        if self.sx.setSkip(values[0], skip):
+            values[-1] = 1 if skip else None
+            self.s_tv.item(var, values=values)
 
     def dayBefore(self):
         self.day -= timedelta(1)

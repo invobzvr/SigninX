@@ -1,4 +1,5 @@
 ﻿*demo*
+.vscode
 
 __pycache__/
 *.pyc
