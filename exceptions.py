@@ -1,4 +1,5 @@
 from json.decoder import JSONDecodeError
+from requests.exceptions import SSLError
 
 
 class NotLogin(Exception):
@@ -6,4 +7,8 @@ class NotLogin(Exception):
 
 
 class NotTimeYet(Exception):
+    pass
+
+
+class TryAgain(Exception):
     pass

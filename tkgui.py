@@ -68,7 +68,7 @@ self.{X}_tv = {X}_tv
         self.v_txt.insert(1.0, val)
 
     def sortColumn(self, tv, col, asc):
-        items = [(tv.set(var, col), var) for var in tv.get_children()]
+        items = [(tv.set(var, col).lower(), var) for var in tv.get_children()]
         items.sort(reverse=asc)
         for idx, (val, var) in enumerate(items):
             tv.move(var, '', idx)

@@ -18,7 +18,8 @@ class BaseSignin:
             headers=args.get('headers'),
             cookies=args.get('cookies'),
             data=args.get('data'),
-            allow_redirects=args.get('allow_redirects', True)
+            allow_redirects=args.get('allow_redirects', True),
+            verify=args.get('verify', True)
         )
         return eval(args.get('result', 'None')) or res
 
@@ -47,6 +48,10 @@ class BaseSignin:
                 self.login()
             except NotTimeYet:
                 break
+            except TryAgain:
+                continue
+            except SSLError:
+                self.args['verify'] = False
 
     def verify(self, rzt):
         pass
